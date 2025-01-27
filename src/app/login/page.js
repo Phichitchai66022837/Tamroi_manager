@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // เพิ่ม useRef
 import { useRouter } from "next/navigation"; // ใช้สำหรับเปลี่ยนเส้นทาง
 import { Roboto } from "next/font/google";
-import Image from 'next/image';
+import Image from "next/image";
+
 const roboto = Roboto({
     weight: ["400", "500"],
     subsets: ["latin"],
@@ -24,6 +25,9 @@ export default function Login() {
     const [isPasswordEmpty, setIsPasswordEmpty] = useState(false);
     const [isInvalidEmail, setIsInvalidEmail] = useState(false); // สำหรับตรวจสอบรูปแบบอีเมล
     const router = useRouter();
+
+    const emailRef = useRef(null); // Ref สำหรับ Email Input
+    const passwordRef = useRef(null); // Ref สำหรับ Password Input
 
     const isValidEmail = (email) => {
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -90,7 +94,7 @@ export default function Login() {
     // Add event listener for Enter key press
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === "Enter") {
                 handleLogin();
             }
         };
@@ -102,6 +106,12 @@ export default function Login() {
             window.removeEventListener("keydown", handleKeyDown);
         };
     }, [email, password]); // Re-run when email or password changes
+
+    const handleSpanClick = (inputRef) => {
+        if (inputRef && inputRef.current) {
+            inputRef.current.focus(); // โฟกัสไปที่ input ที่เกี่ยวข้อง
+        }
+    };
 
     return (
         <div
@@ -131,8 +141,10 @@ export default function Login() {
                         </span>
 
                         {/* Input Email */}
+                        {/* Input Email */}
                         <div className="w-full relative mb-3">
                             <input
+                                ref={emailRef}
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -140,7 +152,8 @@ export default function Login() {
                                     }`}
                             />
                             <span
-                                className={`absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 ${email ? "top-[-10px] w-16 text-sky-400" : "top-2"
+                                onClick={() => handleSpanClick(emailRef)}
+                                className={`absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none ${email ? "top-[-10px] w-16 text-sky-400" : "top-2"
                                     }`}
                             >
                                 Email
@@ -150,6 +163,7 @@ export default function Login() {
                         {/* Input Password */}
                         <div className="w-full relative mb-3">
                             <input
+                                ref={passwordRef}
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -157,7 +171,8 @@ export default function Login() {
                                     }`}
                             />
                             <span
-                                className={`absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 ${password ? "top-[-10px] w-20 text-sky-400" : "top-2"
+                                onClick={() => handleSpanClick(passwordRef)}
+                                className={`absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none ${password ? "top-[-10px] w-20 text-sky-400" : "top-2"
                                     }`}
                             >
                                 Password
@@ -169,7 +184,7 @@ export default function Login() {
                             <span className="text-red-500 text-[14px] mb-3">{error}</span>
                         )}
 
-                        <a href="/homepage" className="text-[14px] mt-3 text-blue-400">
+                        <a href="/forgot" className="text-[14px] mt-3 text-blue-400">
                             Forgot Password?
                         </a>
                         <button
