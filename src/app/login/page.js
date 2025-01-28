@@ -45,22 +45,25 @@ export default function Login() {
 
         // ตรวจสอบว่าผู้ใช้กรอกทั้งสองช่องหรือไม่
         if (!email && !password) {
-            setError("Please fill in both fields.");
+            setError("Please fill in both fields");
             setIsEmailEmpty(true);
             setIsPasswordEmpty(true);
             hasError = true;
+            emailRef.current.focus();  // Focus email input if both are empty
         } else {
             if (!email) {
-                setError("Please enter your email.");
+                setError("Please enter your email");
                 setIsEmailEmpty(true);
                 setIsPasswordEmpty(false);
                 hasError = true;
+                emailRef.current.focus();  // Focus email input if email is empty
             } else if (!isValidEmail(email)) {
-                setError("Invalid email format.");
+                setError("Invalid email format");
                 setIsEmailEmpty(false);
                 setIsInvalidEmail(true);
                 setIsPasswordEmpty(false);
                 hasError = true;
+                emailRef.current.focus();  // Focus email input if email format is invalid
             } else {
                 setIsEmailEmpty(false);
                 setIsInvalidEmail(false);
@@ -68,10 +71,11 @@ export default function Login() {
 
             if (!password) {
                 if (email) {
-                    setError("Please enter your password.");
+                    setError("Please enter your password");
                 }
                 setIsPasswordEmpty(true);
                 hasError = true;
+                passwordRef.current.focus();  // Focus password input if password is empty
             } else {
                 setIsPasswordEmpty(false);
             }
@@ -83,7 +87,7 @@ export default function Login() {
 
         // ตรวจสอบข้อมูลบัญชี
         if (!authenticateUser(email, password)) {
-            setError("Invalid email or password.");
+            setError("Invalid email or password");
             return;
         }
         // หากข้อมูลถูกต้อง
@@ -141,7 +145,6 @@ export default function Login() {
                         </span>
 
                         {/* Input Email */}
-                        {/* Input Email */}
                         <div className="w-full relative mb-3">
                             <input
                                 ref={emailRef}
@@ -153,7 +156,7 @@ export default function Login() {
                             />
                             <span
                                 onClick={() => handleSpanClick(emailRef)}
-                                className={`absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none ${email ? "top-[-10px] w-16 text-sky-400" : "top-2"
+                                className={`peer absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none peer-focus:top-[-11px] peer-focus:w-16 peer-focus:text-sky-400 ${email ? "top-[-10px] w-16 text-sky-400" : "top-2"
                                     }`}
                             >
                                 Email
@@ -172,7 +175,7 @@ export default function Login() {
                             />
                             <span
                                 onClick={() => handleSpanClick(passwordRef)}
-                                className={`absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none ${password ? "top-[-10px] w-20 text-sky-400" : "top-2"
+                                className={`peer absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none peer-focus:top-[-11px] peer-focus:w-16 peer-focus:text-sky-400 ${password ? "top-[-10px] w-20 text-sky-400" : "top-2"
                                     }`}
                             >
                                 Password
