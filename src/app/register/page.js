@@ -154,7 +154,7 @@ export default function Signup() {
                             />
                             <span
                                 onClick={() => handleSpanClick(passwordRef)}
-                                className={`peer absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none peer-focus:top-[-11px] peer-focus:w-16 peer-focus:text-sky-400 ${formData.password ? "top-[-11px] w-20 text-sky-400" : "top-2"}`}
+                                className={`peer absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none peer-focus:top-[-11px] peer-focus:w-24 peer-focus:text-sky-400 ${formData.password ? "top-[-11px] w-24 text-sky-400" : "top-2"}`}
                             >
                                 Password
                             </span>
@@ -175,7 +175,7 @@ export default function Signup() {
                             />
                             <span
                                 onClick={() => handleSpanClick(usernameRef)}
-                                className={`peer absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none peer-focus:top-[-11px] peer-focus:w-16 peer-focus:text-sky-400 ${formData.username ? "top-[-11px] w-24 text-sky-400" : "top-2"}`}
+                                className={`peer absolute left-4 text-gray-400 select-none text-center bg-white transition-all duration-200 pointer-events-none peer-focus:top-[-11px] peer-focus:w-24 peer-focus:text-sky-400 ${formData.username ? "top-[-11px] w-24 text-sky-400" : "top-2"}`}
                             >
                                 Username
                             </span>
