@@ -133,6 +133,9 @@ export default function Signup() {
                                 value={formData.email}
                                 onChange={handleChange}
                                 className={`peer w-full h-[40px] rounded border text-black pl-4 outline-sky-400  ${!formData.email && error.includes("Email") ? "border-red-500" : ""}`}
+                                style={{
+                                    WebkitBoxShadow: "0 0 0px 1000px white inset"
+                                }}
                             />
                             <span
                                 onClick={() => handleSpanClick(emailRef)}
@@ -151,6 +154,9 @@ export default function Signup() {
                                 value={formData.password}
                                 onChange={handleChange}
                                 className={`peer w-full h-[40px] rounded border text-black pl-4 outline-sky-400 ${!formData.password && error.includes("Password") ? "border-red-500" : ""}`}
+                                style={{
+                                    WebkitBoxShadow: "0 0 0px 1000px white inset"
+                                }}
                             />
                             <span
                                 onClick={() => handleSpanClick(passwordRef)}
@@ -172,6 +178,9 @@ export default function Signup() {
                                 value={formData.username}
                                 onChange={handleChange}
                                 className={`peer w-full h-[40px] rounded border text-black pl-4 outline-sky-400 ${!formData.username && error.includes("Username") ? "border-red-500" : ""}`}
+                                style={{
+                                    WebkitBoxShadow: "0 0 0px 1000px white inset"
+                                }}
                             />
                             <span
                                 onClick={() => handleSpanClick(usernameRef)}

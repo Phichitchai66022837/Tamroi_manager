@@ -153,6 +153,9 @@ export default function Login() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 className={`peer w-full h-[40px] rounded border text-black pl-4 outline-sky-400 ${isEmailEmpty || isInvalidEmail ? "border-red-500" : ""
                                     }`}
+                                style={{
+                                    WebkitBoxShadow: "0 0 0px 1000px white inset"
+                                }}
                             />
                             <span
                                 onClick={() => handleSpanClick(emailRef)}
@@ -172,6 +175,9 @@ export default function Login() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 className={`peer w-full h-[40px] rounded border text-black pl-4 outline-sky-400 ${isPasswordEmpty ? "border-red-500" : ""
                                     }`}
+                                style={{
+                                    WebkitBoxShadow: "0 0 0px 1000px white inset"
+                                }}
                             />
                             <span
                                 onClick={() => handleSpanClick(passwordRef)}
@@ -187,7 +193,7 @@ export default function Login() {
                             <span className="text-red-500 text-[14px] mb-3">{error}</span>
                         )}
 
-                        <a href="/forgot" className="text-[14px] mt-3 text-blue-400">
+                        <a href="/forgotpassword" className="text-[14px] mt-3 text-blue-400">
                             Forgot Password?
                         </a>
                         <button
