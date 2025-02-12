@@ -44,9 +44,6 @@ export default function Sidebar() {
             <div className="w-full flex justify-center items-center pt-4 pb-4 select-none mb-9 relative">
                 <Image src="/image/Logo.png" alt="Logo" width={60} height={300} />
                 <span className="text-black font-semibold text-[28px]">Tamroi</span>
-                <div className="absolute right-[-15px] bg-[#ffffff] w-8 h-8 flex justify-center items-center rounded-full">
-                    <FontAwesomeIcon icon={faCaretLeft} className="text-[24px] text-[#2cadff]" />
-                </div>
             </div>
 
             {/* เมนู Sidebar */}

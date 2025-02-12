@@ -20,7 +20,7 @@ export default function Signup() {
     const usernameRef = useRef(null);
 
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordPattern = /^(?=.*[a-z])(?=.*\d).{8,}|.{15,}$/;
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}|.{15,}$/;
     const usernamePattern = /^(?!\d)[\w_]{5,15}$/;
 
     const focusField = (fieldRef) => {
