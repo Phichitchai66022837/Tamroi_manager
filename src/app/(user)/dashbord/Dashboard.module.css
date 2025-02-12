@@ -1,0 +1,102 @@
+/* Dashboard.module.css */
+
+.container {
+    display: flex;
+    background-color: #f4f6f9;
+    height: 100vh;
+  }
+  
+  .dashboardContent {
+    flex: 1;
+    padding: 20px;
+    margin-left: 250px; /* สำหรับขยายพื้นที่เนื้อหา */
+    background-color: #ffffff;
+    overflow-y: auto;
+  }
+  
+  .title {
+    font-size: 36px;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  /* สไตล์สำหรับกล่องสถิติ */
+  .statsContainer {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+  
+  .statBox {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 30%;
+    text-align: center;
+  }
+  
+  .statBox h3 {
+    font-size: 22px;
+    color: #555;
+  }
+  
+  .statBox p {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+  
+  /* รายการการทำธุรกรรม */
+  .transactionContainer {
+    margin-top: 20px;
+  }
+  
+  .transactionTitle {
+    font-size: 28px;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .transactionList {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .transactionItem {
+    background-color: #ecf0f1;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .transactionType {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2980b9;
+  }
+  
+  .transactionDescription {
+    font-size: 16px;
+    color: #34495e;
+    margin: 5px 0;
+  }
+  
+  .transactionAmount {
+    font-size: 18px;
+    font-weight: bold;
+    color: #27ae60;
+  }
+  
+  .transactionDate {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin-top: 10px;
+  }
+  
+  
