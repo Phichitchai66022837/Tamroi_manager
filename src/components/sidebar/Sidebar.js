@@ -1,5 +1,7 @@
 "use client"; // ใช้ client component
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,11 +15,41 @@ import {
     faGear,
     faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
+import { getAuth, signOut } from "firebase/auth";
+import { db } from "../../../lib/firebaseConfig";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import BarChart from "../chart/Barchart";
 
-
 export default function Sidebar() {
+    const router = useRouter();
     const pathname = usePathname(); // ดึง URL ปัจจุบัน
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            const userEmail = sessionStorage.getItem("userEmail");
+            if (userEmail) {
+                const q = query(collection(db, "users"), where("email", "==", userEmail));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    const userData = querySnapshot.docs[0].data();
+                    setUser(userData);
+                }
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
+    // ฟังก์ชันการล็อกเอาท์
+    const handleLogout = async () => {
+        const auth = getAuth();
+        await signOut(auth);
+        sessionStorage.removeItem("isLoggedIn");
+        sessionStorage.removeItem("userEmail");
+        sessionStorage.removeItem("uid");
+        router.push("/login");
+    };
 
     // เลือก Chart ตาม Path
     let ChartComponent;
@@ -81,10 +113,14 @@ export default function Sidebar() {
                             <Image src="/image/sawako.jpeg" alt="Profile" width={40} height={300} />
                         </div>
                         <div className="flex flex-col w-[55%] max-w-full overflow-hidden whitespace-nowrap text-ellipsis mr-2">
-                            <span className="text-[#0F7CF0] font-semibold">Sawako</span>
-                            <span className="text-[#bdbdbd] font-semibold text-[10px]">66022837@up.ac.th</span>
+                            {user && (
+                                <>
+                                    <span className="text-[#0F7CF0] font-semibold">{user.username}</span>
+                                    <span className="text-[#bdbdbd] font-semibold text-[10px]">{user.email}</span>
+                                </>
+                            )}
                         </div>
-                        <button className="flex justify-center items-center text-[#7c7c7c] group-hover:text-black">
+                        <button onClick={handleLogout} className="flex justify-center items-center text-[#7c7c7c] group-hover:text-black">
                             <FontAwesomeIcon icon={faRightFromBracket} className="text-[20px] mr-3" />
                         </button>
                     </div>

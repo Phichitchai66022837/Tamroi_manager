@@ -76,7 +76,8 @@ export default function Login() {
 
     try {
       const auth = getAuth();
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
       // ตรวจสอบข้อมูลผู้ใช้ใน Firestore
       const q = query(collection(db, "users"), where("email", "==", email));
@@ -86,6 +87,10 @@ export default function Login() {
         setError("Invalid email or password");
         return;
       }
+
+      // เก็บข้อมูลการล็อกอินใน session storage
+      sessionStorage.setItem("isLoggedIn", "true");
+      sessionStorage.setItem("userEmail", email);
 
       setError("");
       router.push("/homepage");
@@ -113,6 +118,13 @@ export default function Login() {
       inputRef.current.focus();
     }
   };
+
+  useEffect(() => {
+    const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+    if (isLoggedIn) {
+      router.push("/homepage");
+    }
+  }, [router]);
 
   return (
     <div

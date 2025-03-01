@@ -1,8 +1,9 @@
 "use client"; // ใช้ client component ถ้าใช้ Next.js App Router
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { db } from "../../../lib/firebaseConfig";
-import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, query, where } from "firebase/firestore";
 import { Doughnut, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -19,6 +20,15 @@ import {
 ChartJS.register(ArcElement, Tooltip, Legend, LineElement, PointElement, LinearScale, CategoryScale);
 
 export default function HomepageContent() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+    if (!isLoggedIn) {
+      router.push("/login");
+    }
+  }, [router]);
+
   const [totalAmount, setTotalAmount] = useState(0); // จำนวนเงินทั้งหมดที่จะใช้
   const [revenue, setRevenue] = useState(0); // รายรับ
   const [expenses, setExpenses] = useState(0); // รายจ่าย
@@ -32,7 +42,6 @@ export default function HomepageContent() {
   const [inputRevenue, setInputRevenue] = useState("");
   const [inputExpenses, setInputExpenses] = useState("");
   const [expenseCategory, setExpenseCategory] = useState("ทั่วไป");
-  const [userId, setUserId] = useState("user123"); // สมมติว่าเรามี userId ของผู้ใช้
   const [showChart, setShowChart] = useState(false); // สถานะเพื่อควบคุมการแสดงผลของกราฟโดนัท
   const [showHistory, setShowHistory] = useState(false); // สถานะเพื่อควบคุมการแสดงผลของประวัติรายรับรายจ่าย
   const [showLineChart, setShowLineChart] = useState(false); // สถานะเพื่อควบคุมการแสดงผลของกราฟเส้น
@@ -42,7 +51,9 @@ export default function HomepageContent() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const querySnapshot = await getDocs(collection(db, "financialData"));
+      const userEmail = sessionStorage.getItem("userEmail");
+      const q = query(collection(db, "financialData"), where("userEmail", "==", userEmail));
+      const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         const data = querySnapshot.docs[0].data();
         setTotalAmount(data.totalAmount);
@@ -66,7 +77,12 @@ export default function HomepageContent() {
     if (!isNaN(newTotalAmount)) {
       setTotalAmount(newTotalAmount);
       setInputTotalAmount("");
-      await updateFinancialData(newTotalAmount, revenue, expenses, expenseCategories, history);
+
+      // ดึงข้อมูลอีเมลและ uid ผู้ใช้จาก session storage
+      const userEmail = sessionStorage.getItem("userEmail");
+      const uid = sessionStorage.getItem("uid");
+
+      await updateFinancialData(newTotalAmount, revenue, expenses, expenseCategories, history, userEmail, uid);
     }
   };
 
@@ -79,7 +95,12 @@ export default function HomepageContent() {
       const date = selectedDate || new Date().toLocaleString();
       const newHistory = [...history, { type: "รายรับ", amount: newRevenue, date }];
       setHistory(newHistory);
-      await updateFinancialData(totalAmount, updatedRevenue, expenses, expenseCategories, newHistory);
+
+      // ดึงข้อมูลอีเมลและ uid ผู้ใช้จาก session storage
+      const userEmail = sessionStorage.getItem("userEmail");
+      const uid = sessionStorage.getItem("uid");
+
+      await updateFinancialData(totalAmount, updatedRevenue, expenses, expenseCategories, newHistory, userEmail, uid);
     }
   };
 
@@ -97,12 +118,19 @@ export default function HomepageContent() {
       const date = selectedDate || new Date().toLocaleString();
       const newHistory = [...history, { type: "รายจ่าย", category: expenseCategory, amount: newExpenses, date }];
       setHistory(newHistory);
-      await updateFinancialData(totalAmount, revenue, updatedExpenses, updatedExpenseCategories, newHistory);
+
+      // ดึงข้อมูลอีเมลและ uid ผู้ใช้จาก session storage
+      const userEmail = sessionStorage.getItem("userEmail");
+      const uid = sessionStorage.getItem("uid");
+
+      await updateFinancialData(totalAmount, revenue, updatedExpenses, updatedExpenseCategories, newHistory, userEmail, uid);
     }
   };
 
   const handleReset = async () => {
-    const querySnapshot = await getDocs(collection(db, "financialData"));
+    const userEmail = sessionStorage.getItem("userEmail");
+    const q = query(collection(db, "financialData"), where("userEmail", "==", userEmail));
+    const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
       const docRef = doc(db, "financialData", querySnapshot.docs[0].id);
       await deleteDoc(docRef);
@@ -134,7 +162,11 @@ export default function HomepageContent() {
       });
     }
 
-    await updateFinancialData(totalAmount, revenue, expenses, expenseCategories, newHistory);
+    // ดึงข้อมูลอีเมลและ uid ผู้ใช้จาก session storage
+    const userEmail = sessionStorage.getItem("userEmail");
+    const uid = sessionStorage.getItem("uid");
+
+    await updateFinancialData(totalAmount, revenue, expenses, expenseCategories, newHistory, userEmail, uid);
   };
 
   const handleEditHistoryItem = (index) => {
@@ -146,13 +178,14 @@ export default function HomepageContent() {
     handleDeleteHistoryItem(index);
   };
 
-  const updateFinancialData = async (totalAmount, revenue, expenses, expenseCategories, history) => {
-    const querySnapshot = await getDocs(collection(db, "financialData"));
+  const updateFinancialData = async (totalAmount, revenue, expenses, expenseCategories, history, userEmail, uid) => {
+    const q = query(collection(db, "financialData"), where("userEmail", "==", userEmail));
+    const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
       const docRef = doc(db, "financialData", querySnapshot.docs[0].id);
-      await updateDoc(docRef, { totalAmount, revenue, expenses, expenseCategories, history, userId });
+      await updateDoc(docRef, { totalAmount, revenue, expenses, expenseCategories, history, userId: uid, userEmail });
     } else {
-      await addDoc(collection(db, "financialData"), { totalAmount, revenue, expenses, expenseCategories, history, userId });
+      await addDoc(collection(db, "financialData"), { totalAmount, revenue, expenses, expenseCategories, history, userId: uid, userEmail });
     }
   };
 
@@ -233,12 +266,12 @@ export default function HomepageContent() {
   };
 
   // ฟังก์ชันเพื่อคำนวณวันไหนใช้เงินมากที่สุดและวันไหนได้รับเงินมากที่สุด
-const calculateSummary = () => {
+  const calculateSummary = () => {
     let maxExpenseDay = { date: "", amount: 0 };
     let maxRevenueDay = { date: "", amount: 0 };
     const dailyExpenses = {};
     const dailyRevenues = {};
-  
+
     history.forEach(item => {
       const date = new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
       if (item.type === "รายจ่าย") {
@@ -253,7 +286,7 @@ const calculateSummary = () => {
         }
       }
     });
-  
+
     return {
       totalRevenue: revenue,
       totalExpenses: expenses,
@@ -261,7 +294,7 @@ const calculateSummary = () => {
       maxRevenueDay,
     };
   };
-  
+
   // สถานะเพื่อควบคุมการแสดงผลของสรุปค่าใช้จ่าย
   const summary = calculateSummary();
 
