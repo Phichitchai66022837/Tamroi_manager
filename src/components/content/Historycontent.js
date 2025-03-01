@@ -46,7 +46,8 @@ export default function Historycontent() {
 
     const handleAddOrder = () => {
         let isValid = true;
-        let errors = { list: false, price: false, date: false }; // เพิ่ม error สำหรับวันที่
+        let errors = { list: false, price: false, date: false };
+
         if (!formData.list) {
             isValid = false;
             errors.list = true;
@@ -55,7 +56,6 @@ export default function Historycontent() {
             isValid = false;
             errors.price = true;
         }
-        // เช็ควันที่ว่าถูกต้องหรือไม่
         if (new Date(formData.date) > new Date()) {
             isValid = false;
             errors.date = true;
@@ -66,12 +66,66 @@ export default function Historycontent() {
             setInputErrors(errors);
         } else {
             const formattedPrice = formData.price.replace(/,/g, '');
-            setOrders([...orders, { ...formData, price: Number(formattedPrice) }]);
+            const newOrder = { ...formData, price: Number(formattedPrice) };
+
+            // เพิ่มรายการไปที่ด้านบน
+            setOrders([newOrder, ...orders]);
+
             setFormData({ ...formData, list: "", price: "" });
             setErrorMessage("");
             setInputErrors({ list: false, price: false, date: false });
         }
     };
+
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editIndex, setEditIndex] = useState(null);
+
+
+    const handleEdit = (index) => {
+        const orderToEdit = orders[(currentPage - 1) * itemsPerPage + index];
+        setFormData(orderToEdit);
+        setIsEditing(true);
+        setEditIndex((currentPage - 1) * itemsPerPage + index);
+    };
+
+    const handleUpdateOrder = () => {
+        let isValid = true;
+        let errors = { list: false, price: false, date: false };
+
+        if (!formData.list) {
+            isValid = false;
+            errors.list = true;
+        }
+        if (!formData.price || isNaN(Number(formData.price))) {
+            isValid = false;
+            errors.price = true;
+        }
+        if (new Date(formData.date) > new Date()) {
+            isValid = false;
+            errors.date = true;
+            setErrorMessage("The date cannot be in the future. Please select a valid date.");
+        }
+
+        if (!isValid) {
+            setInputErrors(errors);
+        } else {
+            // แปลงเป็น string ก่อนใช้ replace() แล้วแปลงกลับเป็นตัวเลข
+            const formattedPrice = Number(String(formData.price).replace(/,/g, ''));
+
+            const updatedOrders = [...orders];
+            updatedOrders[editIndex] = { ...formData, price: formattedPrice };
+
+            setOrders(updatedOrders);
+            setFormData({ date: new Date().toISOString().split("T")[0], list: "", price: "", type: "Revenue" });
+            setErrorMessage("");
+            setInputErrors({ list: false, price: false, date: false });
+            setIsEditing(false);
+            setEditIndex(null);
+        }
+    };
+
+
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -103,7 +157,7 @@ export default function Historycontent() {
                                     <td className="border border-black px-4 py-2">{formatNumber(order.price)}</td>
                                     <td className={`border border-black px-4 py-2 ${order.type === "Revenue" ? "text-green-600" : "text-red-600"}`}>{order.type}</td>
                                     <td className="border border-black px-4 py-2 text-center">
-                                        <button className="bg-gray-400 text-white rounded px-2 py-1 mr-2 hover:bg-gray-300">Edit</button>
+                                        <button className="bg-gray-400 text-white rounded px-2 py-1 mr-2 hover:bg-gray-300" onClick={() => handleEdit(index)}>Edit</button>
                                         <button className="bg-red-500 text-white rounded px-2 py-1 hover:bg-red-400" onClick={() => handleDelete(index)}>Delete</button>
                                     </td>
                                 </tr>
@@ -179,10 +233,11 @@ export default function Historycontent() {
                         </select>
                         <button
                             className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
-                            onClick={handleAddOrder}
+                            onClick={isEditing ? handleUpdateOrder : handleAddOrder}
                         >
-                            Add
+                            {isEditing ? "Change" : "Add"}
                         </button>
+
                         {errorMessage && <span className="text-red-500 mt-2">{errorMessage}</span>}
                     </div>
                 </div>
