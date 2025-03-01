@@ -87,6 +87,7 @@ export default function Signup() {
         uid: user.uid,
         email: user.email,
         username: username,
+        password: password, // บันทึกรหัสผ่าน (ไม่แนะนำในโปรดักชั่น)
         createdAt: new Date()
       });
 
