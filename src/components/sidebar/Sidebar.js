@@ -51,17 +51,7 @@ export default function Sidebar() {
         router.push("/login");
     };
 
-    // เลือก Chart ตาม Path
-    let ChartComponent;
-    if (pathname === "/dashbord") {
-        ChartComponent = <BarChart />;
-    } else if (pathname === "/history") {
-        ChartComponent = <LineChart />;
-    } else if (pathname === "/analyze") {
-        ChartComponent = <PieChart />;
-    } else {
-        ChartComponent = <BarChart />; // Default กราฟ
-    }
+    
 
     const menuItems = [
         { name: "Home", path: "/homepage", icon: faHouse },
