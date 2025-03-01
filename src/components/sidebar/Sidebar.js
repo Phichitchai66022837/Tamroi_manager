@@ -1,6 +1,6 @@
 "use client"; // ใช้ client component
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -15,15 +15,22 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import BarChart from "../chart/Barchart";
 
-
 export default function Sidebar() {
     const pathname = usePathname(); // ดึง URL ปัจจุบัน
+    const router = useRouter(); // ใช้ router สำหรับการนำทาง
     const menuItems = [
         { name: "Home", path: "/homepage", icon: faHouse },
         { name: "Dashboard", path: "/dashbord", icon: faChartLine },
         { name: "History", path: "/history", icon: faClockRotateLeft },
         { name: "Analyze", path: "/analyze", icon: faBolt },
     ];
+
+    // Function to handle logout
+    const handleLogout = () => {
+        // Here, you can clear session data, tokens, or make an API call to logout
+        // For now, we'll just redirect to the login page
+        router.push("/login"); // Redirect user to the login page
+    };
 
     return (
         <div className="bg-white w-[16%] h-screen relative">
@@ -56,7 +63,7 @@ export default function Sidebar() {
                         <FontAwesomeIcon icon={faBell} className="text-[20px] mr-3" />
                         Notifications
                     </a>
-                    <a href="home" className="text-[#7c7c7c] w-[80%] h-[40px] rounded flex items-center text-center text-[16px] duration-300 font-semibold pl-5 mb-2 hover:bg-[#efefef] hover:text-black">
+                    <a href="/profile" className="text-[#7c7c7c] w-[80%] h-[40px] rounded flex items-center text-center text-[16px] duration-300 font-semibold pl-5 mb-2 hover:bg-[#efefef] hover:text-black">
                         <FontAwesomeIcon icon={faGear} className="text-[20px] mr-3" />
                         Settings
                     </a>
@@ -68,7 +75,10 @@ export default function Sidebar() {
                             <span className="text-[#0F7CF0] font-semibold">Sawako</span>
                             <span className="text-[#bdbdbd] font-semibold text-[10px]">66022837@up.ac.th</span>
                         </div>
-                        <button className="flex justify-center items-center text-[#7c7c7c] group-hover:text-black">
+                        <button
+                            onClick={handleLogout} // Call the handleLogout function on click
+                            className="flex justify-center items-center text-[#7c7c7c] group-hover:text-black"
+                        >
                             <FontAwesomeIcon icon={faRightFromBracket} className="text-[20px] mr-3" />
                         </button>
                     </div>
