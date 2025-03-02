@@ -54,25 +54,41 @@ export default function HomepageContent() {
   useEffect(() => {
     const fetchData = async () => {
       const userEmail = sessionStorage.getItem("userEmail");
-      const q = query(collection(db, "financialData"), where("userEmail", "==", userEmail));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        const data = querySnapshot.docs[0].data();
+      const localData = localStorage.getItem("financialData");
+
+      if (localData) {
+        const data = JSON.parse(localData);
         setTotalAmount(data.totalAmount);
         setRevenue(data.revenue);
         setExpenses(data.expenses);
-        setExpenseCategories(data.expenseCategories || {
-          "ทั่วไป": 0,
-          "ค่าน้ำค่าไฟ": 0,
-          "ค่าอาหาร": 0,
-          "ค่าที่พัก": 0,
-        });
-        setHistory(data.history || []);
+        setExpenseCategories(data.expenseCategories);
+        setHistory(data.history);
+      } else {
+        const q = query(collection(db, "financialData"), where("userEmail", "==", userEmail));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const data = querySnapshot.docs[0].data();
+          setTotalAmount(data.totalAmount);
+          setRevenue(data.revenue);
+          setExpenses(data.expenses);
+          setExpenseCategories(data.expenseCategories || {
+            "ทั่วไป": 0,
+            "ค่าน้ำค่าไฟ": 0,
+            "ค่าอาหาร": 0,
+            "ค่าที่พัก": 0,
+          });
+          setHistory(data.history || []);
+          localStorage.setItem("financialData", JSON.stringify(data));
+        }
       }
     };
 
     fetchData();
   }, []);
+
+  const updateLocalStorage = (data) => {
+    localStorage.setItem("financialData", JSON.stringify(data));
+  };
 
   const handleSetTotalAmount = async () => {
     const newTotalAmount = parseFloat(inputTotalAmount.replace(/,/g, ''));
@@ -84,7 +100,18 @@ export default function HomepageContent() {
       const userEmail = sessionStorage.getItem("userEmail");
       const uid = sessionStorage.getItem("uid");
 
-      await updateFinancialData(newTotalAmount, revenue, expenses, expenseCategories, history, userEmail, uid);
+      const updatedData = {
+        totalAmount: newTotalAmount,
+        revenue,
+        expenses,
+        expenseCategories,
+        history,
+        userEmail,
+        uid
+      };
+
+      await updateFinancialData(updatedData);
+      updateLocalStorage(updatedData);
     }
   };
 
@@ -102,7 +129,18 @@ export default function HomepageContent() {
       const userEmail = sessionStorage.getItem("userEmail");
       const uid = sessionStorage.getItem("uid");
 
-      await updateFinancialData(totalAmount, updatedRevenue, expenses, expenseCategories, newHistory, userEmail, uid);
+      const updatedData = {
+        totalAmount,
+        revenue: updatedRevenue,
+        expenses,
+        expenseCategories,
+        history: newHistory,
+        userEmail,
+        uid
+      };
+
+      await updateFinancialData(updatedData);
+      updateLocalStorage(updatedData);
     }
   };
 
@@ -125,7 +163,18 @@ export default function HomepageContent() {
       const userEmail = sessionStorage.getItem("userEmail");
       const uid = sessionStorage.getItem("uid");
 
-      await updateFinancialData(totalAmount, revenue, updatedExpenses, updatedExpenseCategories, newHistory, userEmail, uid);
+      const updatedData = {
+        totalAmount,
+        revenue,
+        expenses: updatedExpenses,
+        expenseCategories: updatedExpenseCategories,
+        history: newHistory,
+        userEmail,
+        uid
+      };
+
+      await updateFinancialData(updatedData);
+      updateLocalStorage(updatedData);
     }
   };
 
@@ -147,6 +196,7 @@ export default function HomepageContent() {
       "ค่าที่พัก": 0,
     });
     setHistory([]);
+    localStorage.removeItem("financialData");
   };
 
   const handleDeleteHistoryItem = async (index) => {
@@ -168,7 +218,18 @@ export default function HomepageContent() {
     const userEmail = sessionStorage.getItem("userEmail");
     const uid = sessionStorage.getItem("uid");
 
-    await updateFinancialData(totalAmount, revenue, expenses, expenseCategories, newHistory, userEmail, uid);
+    const updatedData = {
+      totalAmount,
+      revenue,
+      expenses,
+      expenseCategories,
+      history: newHistory,
+      userEmail,
+      uid
+    };
+
+    await updateFinancialData(updatedData);
+    updateLocalStorage(updatedData);
   };
 
   const handleEditHistoryItem = (index) => {
@@ -206,13 +267,25 @@ export default function HomepageContent() {
       const userEmail = sessionStorage.getItem("userEmail");
       const uid = sessionStorage.getItem("uid");
 
-      await updateFinancialData(totalAmount, revenue, expenses, expenseCategories, newHistory, userEmail, uid);
+      const updatedData = {
+        totalAmount,
+        revenue,
+        expenses,
+        expenseCategories,
+        history: newHistory,
+        userEmail,
+        uid
+      };
+
+      await updateFinancialData(updatedData);
+      updateLocalStorage(updatedData);
 
       handleCancelEdit();
     }
   };
 
-  const updateFinancialData = async (totalAmount, revenue, expenses, expenseCategories, history, userEmail, uid) => {
+  const updateFinancialData = async (data) => {
+    const { totalAmount, revenue, expenses, expenseCategories, history, userEmail, uid } = data;
     const q = query(collection(db, "financialData"), where("userEmail", "==", userEmail));
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
@@ -309,269 +382,269 @@ export default function HomepageContent() {
 
   // ฟังก์ชันเพื่อคำนวณวันไหนใช้เงินมากที่สุดและวันไหนได้รับเงินมากที่สุด
   const calculateSummary = () => {
-  let maxExpenseDay = { date: "", amount: 0 };
-  let maxRevenueDay = { date: "", amount: 0 };
-  const dailyExpenses = {};
-  const dailyRevenues = {};
+    let maxExpenseDay = { date: "", amount: 0 };
+    let maxRevenueDay = { date: "", amount: 0 };
+    const dailyExpenses = {};
+    const dailyRevenues = {};
 
-  history.forEach(item => {
-    const date = new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-    if (item.type === "รายจ่าย") {
-      dailyExpenses[date] = (dailyExpenses[date] || 0) + item.amount;
-      if (dailyExpenses[date] > maxExpenseDay.amount) {
-        maxExpenseDay = { date, amount: dailyExpenses[date] };
+    history.forEach(item => {
+      const date = new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+      if (item.type === "รายจ่าย") {
+        dailyExpenses[date] = (dailyExpenses[date] || 0) + item.amount;
+        if (dailyExpenses[date] > maxExpenseDay.amount) {
+          maxExpenseDay = { date, amount: dailyExpenses[date] };
+        }
+      } else if (item.type === "รายรับ") {
+        dailyRevenues[date] = (dailyRevenues[date] || 0) + item.amount;
+        if (dailyRevenues[date] > maxRevenueDay.amount) {
+          maxRevenueDay = { date, amount: dailyRevenues[date] };
+        }
       }
-    } else if (item.type === "รายรับ") {
-      dailyRevenues[date] = (dailyRevenues[date] || 0) + item.amount;
-      if (dailyRevenues[date] > maxRevenueDay.amount) {
-        maxRevenueDay = { date, amount: dailyRevenues[date] };
-      }
-    }
-  });
+    });
 
-  const totalRevenue = revenue;
-  const totalExpenses = expenses;
-  const remainingAmount = totalAmount + totalRevenue - totalExpenses;
-  const usedPercentage = ((totalExpenses / totalAmount) * 100).toFixed(2);
-  const receivedPercentage = ((totalRevenue / totalAmount) * 100).toFixed(2);
-  const remainingPercentage = (100 - usedPercentage - receivedPercentage).toFixed(2);
-  const totalMoney = totalAmount + totalRevenue;
+    const totalRevenue = revenue;
+    const totalExpenses = expenses;
+    const remainingAmount = totalAmount + totalRevenue - totalExpenses;
+    const usedPercentage = ((totalExpenses / totalAmount) * 100).toFixed(2);
+    const receivedPercentage = ((totalRevenue / totalAmount) * 100).toFixed(2);
+    const remainingPercentage = (100 - usedPercentage - receivedPercentage).toFixed(2);
+    const totalMoney = totalAmount + totalRevenue;
 
-  return {
-    totalRevenue,
-    totalExpenses,
-    maxExpenseDay,
-    maxRevenueDay,
-    remainingAmount,
-    usedPercentage,
-    receivedPercentage,
-    remainingPercentage,
-    totalMoney,
+    return {
+      totalRevenue,
+      totalExpenses,
+      maxExpenseDay,
+      maxRevenueDay,
+      remainingAmount,
+      usedPercentage,
+      receivedPercentage,
+      remainingPercentage,
+      totalMoney,
+    };
   };
-};
 
-// สถานะเพื่อควบคุมการแสดงผลของสรุปค่าใช้จ่าย
-const summary = calculateSummary();
+  // สถานะเพื่อควบคุมการแสดงผลของสรุปค่าใช้จ่าย
+  const summary = calculateSummary();
 
-return (
-  <div className="flex justify-center items-center w-[84%] h-screen select-none">
-    <div className="w-[95%] h-[95%] bg-white rounded flex flex-col items-center overflow-hidden p-4 relative">
-      {totalAmount === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full w-full">
-          <div className="flex gap-2 w-full max-w-md">
-            <input
-              type="text"
-              value={inputTotalAmount}
-              onChange={(e) => setInputTotalAmount(e.target.value)}
-              placeholder="จำนวนเงินทั้งหมดที่จะใช้"
-              className="border px-3 py-2 rounded flex-grow text-black"
-            />
-            <button
-              onClick={handleSetTotalAmount}
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              ตั้งจำนวนเงิน
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="flex flex-col items-center gap-4 w-full max-w-md">
-            <div className="flex gap-4 w-full mt-4">
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="border px-3 py-2 rounded text-black"
-              />
-            </div>
-            <div className="flex gap-4 w-full mt-4">
+  return (
+    <div className="flex justify-center items-center w-[84%] h-screen select-none">
+      <div className="w-[95%] h-[95%] bg-white rounded flex flex-col items-center overflow-hidden p-4 relative">
+        {totalAmount === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full w-full">
+            <div className="flex gap-2 w-full max-w-md">
               <input
                 type="text"
-                value={inputRevenue}
-                onChange={(e) => setInputRevenue(e.target.value)}
-                placeholder="เพิ่มรายรับ"
+                value={inputTotalAmount}
+                onChange={(e) => setInputTotalAmount(e.target.value)}
+                placeholder="จำนวนเงินทั้งหมดที่จะใช้"
                 className="border px-3 py-2 rounded flex-grow text-black"
               />
               <button
-                onClick={handleAddRevenue}
-                className="bg-green-500 text-white px-5 py-3 rounded mt-1"
+                onClick={handleSetTotalAmount}
+                className="bg-blue-500 text-white px-4 py-2 rounded"
               >
-                เพิ่มรายรับ
+                ตั้งจำนวนเงิน
               </button>
-            </div>
-            <div className="flex gap-4 w-full">
-              <input
-                type="text"
-                value={inputExpenses}
-                onChange={(e) => setInputExpenses(e.target.value)}
-                placeholder="เพิ่มรายจ่าย"
-                className="border px-25 py-4 rounded flex-grow text-black"
-              />
-              <select
-                value={expenseCategory}
-                onChange={(e) => setExpenseCategory(e.target.value)}
-                className="border px-25 py-4 rounded flex-grow text-black"
-              >
-                <option value="ทั่วไป">ค่าใช้จ่ายทั่วไป</option>
-                <option value="ค่าน้ำค่าไฟ">ค่าน้ำค่าไฟ</option>
-                <option value="ค่าอาหาร">ค่าอาหาร</option>
-                <option value="ค่าที่พัก">ค่าที่พัก</option>
-              </select>
-              <button
-                onClick={handleAddExpenses}
-                className="bg-red-500 text-white px-4 py-2 rounded"
-              >
-                เพิ่มรายจ่าย
-              </button>
-            </div>
-            <div className="text-center mt-4">
-              <p className="text-xl font-semibold text-black">ยอดเงินคงเหลือทั้งหมด: ฿{summary.remainingAmount.toLocaleString()}</p>
             </div>
           </div>
-          {(revenue > 0 || expenses > 0) && (
-            <div className="flex gap-2 mb-4 mt-4">
-              <button
-                onClick={() => {
-                  setShowChart(!showChart);
-                  if (showHistory) setShowHistory(false);
-                  if (showLineChart) setShowLineChart(false);
-                  if (showSummary) setShowSummary(false);
-                }}
-                className="bg-gray-500 text-white px-12 py-3 rounded"
-              >
-                {showChart ? "ซ่อน" : "กราฟโดนัท"}
-              </button>
-              <button
-                onClick={() => {
-                  setShowHistory(!showHistory);
-                  if (showChart) setShowChart(false);
-                  if (showLineChart) setShowLineChart(false);
-                  if (showSummary) setShowSummary(false);
-                }}
-                className="bg-gray-500 text-white px-12 py-3 rounded"
-              >
-                {showHistory ? "ซ่อน" : "ประวัติค่าใช้จ่าย"}
-              </button>
-              <button
-                onClick={() => {
-                  setShowLineChart(!showLineChart);
-                  if (showChart) setShowChart(false);
-                  if (showHistory) setShowHistory(false);
-                  if (showSummary) setShowSummary(false);
-                }}
-                className="bg-gray-500 text-white px-12 py-3 rounded"
-                style={{ display: (revenue > 0 || expenses > 0) ? 'block' : 'none' }}
-              >
-                {showLineChart ? "ซ่อน" : "กราฟเส้น"}
-              </button>
-              <button
-                onClick={() => {
-                  setShowSummary(!showSummary);
-                  if (showChart) setShowChart(false);
-                  if (showHistory) setShowHistory(false);
-                  if (showLineChart) setShowLineChart(false);
-                }}
-                className="bg-gray-500 text-white px-12 py-3 rounded"
-              >
-                {showSummary ? "ซ่อน" : "สรุปค่าใช้จ่าย"}
-              </button>
+        ) : (
+          <>
+            <div className="flex flex-col items-center gap-4 w-full max-w-md">
+              <div className="flex gap-4 w-full mt-4">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="border px-3 py-2 rounded text-black"
+                />
+              </div>
+              <div className="flex gap-4 w-full mt-4">
+                <input
+                  type="text"
+                  value={inputRevenue}
+                  onChange={(e) => setInputRevenue(e.target.value)}
+                  placeholder="เพิ่มรายรับ"
+                  className="border px-3 py-2 rounded flex-grow text-black"
+                />
+                <button
+                  onClick={handleAddRevenue}
+                  className="bg-green-500 text-white px-5 py-3 rounded mt-1"
+                >
+                  เพิ่มรายรับ
+                </button>
+              </div>
+              <div className="flex gap-4 w-full">
+                <input
+                  type="text"
+                  value={inputExpenses}
+                  onChange={(e) => setInputExpenses(e.target.value)}
+                  placeholder="เพิ่มรายจ่าย"
+                  className="border px-25 py-4 rounded flex-grow text-black"
+                />
+                <select
+                  value={expenseCategory}
+                  onChange={(e) => setExpenseCategory(e.target.value)}
+                  className="border px-25 py-4 rounded flex-grow text-black"
+                >
+                  <option value="ทั่วไป">ค่าใช้จ่ายทั่วไป</option>
+                  <option value="ค่าน้ำค่าไฟ">ค่าน้ำค่าไฟ</option>
+                  <option value="ค่าอาหาร">ค่าอาหาร</option>
+                  <option value="ค่าที่พัก">ค่าที่พัก</option>
+                </select>
+                <button
+                  onClick={handleAddExpenses}
+                  className="bg-red-500 text-white px-4 py-2 rounded"
+                >
+                  เพิ่มรายจ่าย
+                </button>
+              </div>
+              <div className="text-center mt-4">
+                <p className="text-xl font-semibold text-black">ยอดเงินคงเหลือทั้งหมด: ฿{summary.remainingAmount.toLocaleString()}</p>
+              </div>
             </div>
-          )}
-          {showChart && (revenue > 0 || expenses > 0) && (
-            <div className="w-full max-w-sm mb-4"> {/* ปรับขนาดกราฟโดนัท */}
-              <Doughnut data={doughnutData} options={doughnutOptions} />
-            </div>
-          )}
-          {showHistory && (
-            <div className="w-full max-w-md mt-4 overflow-y-auto max-h-[30rem]">
-              <h2 className="text-lg font-semibold text-black mb-2">ประวัติค่าใช้จ่าย (แก้ไข)</h2>
-              <ul className="list-disc list-inside text-black">
-                {history.map((item, index) => (
-                  <li key={index} className="flex justify-between items-center">
-                    <span>
-                      {item.date} - {item.type} {item.category ? `(${item.category})` : ""}: ฿{item.amount.toLocaleString()}
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEditHistoryItem(index)}
-                        className="bg-yellow-500 text-white px-2 py-1 rounded"
-                      >
-                        แก้ไข
-                      </button>
-                      <button
-                        onClick={() => handleDeleteHistoryItem(index)}
-                        className="bg-red-500 text-white px-2 py-1 rounded"
-                      >
-                        ลบ
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              {editIndex !== null && (
-                <div className="mt-4">
-                  <button
-                    onClick={handleSaveEdit}
-                    className="bg-green-500 text-white px-4 py-2 rounded"
-                  >
-                    บันทึก
-                  </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
-                  >
-                    ยกเลิก
-                  </button>
+            {(revenue > 0 || expenses > 0) && (
+              <div className="flex gap-2 mb-4 mt-4">
+                <button
+                  onClick={() => {
+                    setShowChart(!showChart);
+                    if (showHistory) setShowHistory(false);
+                    if (showLineChart) setShowLineChart(false);
+                    if (showSummary) setShowSummary(false);
+                  }}
+                  className="bg-gray-500 text-white px-12 py-3 rounded"
+                >
+                  {showChart ? "ซ่อน" : "กราฟโดนัท"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowHistory(!showHistory);
+                    if (showChart) setShowChart(false);
+                    if (showLineChart) setShowLineChart(false);
+                    if (showSummary) setShowSummary(false);
+                  }}
+                  className="bg-gray-500 text-white px-12 py-3 rounded"
+                >
+                  {showHistory ? "ซ่อน" : "ประวัติค่าใช้จ่าย"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLineChart(!showLineChart);
+                    if (showChart) setShowChart(false);
+                    if (showHistory) setShowHistory(false);
+                    if (showSummary) setShowSummary(false);
+                  }}
+                  className="bg-gray-500 text-white px-12 py-3 rounded"
+                  style={{ display: (revenue > 0 || expenses > 0) ? 'block' : 'none' }}
+                >
+                  {showLineChart ? "ซ่อน" : "กราฟเส้น"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSummary(!showSummary);
+                    if (showChart) setShowChart(false);
+                    if (showHistory) setShowHistory(false);
+                    if (showLineChart) setShowLineChart(false);
+                  }}
+                  className="bg-gray-500 text-white px-12 py-3 rounded"
+                >
+                  {showSummary ? "ซ่อน" : "สรุปค่าใช้จ่าย"}
+                </button>
+              </div>
+            )}
+            {showChart && (revenue > 0 || expenses > 0) && (
+              <div className="w-full max-w-sm mb-4"> {/* ปรับขนาดกราฟโดนัท */}
+                <Doughnut data={doughnutData} options={doughnutOptions} />
+              </div>
+            )}
+            {showHistory && (
+              <div className="w-full max-w-md mt-4 overflow-y-auto max-h-[30rem]">
+                <h2 className="text-lg font-semibold text-black mb-2">ประวัติค่าใช้จ่าย (แก้ไข)</h2>
+                <ul className="list-disc list-inside text-black">
+                  {history.map((item, index) => (
+                    <li key={index} className="flex justify-between items-center">
+                      <span>
+                        {item.date} - {item.type} {item.category ? `(${item.category})` : ""}: ฿{item.amount.toLocaleString()}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditHistoryItem(index)}
+                          className="bg-yellow-500 text-white px-2 py-1 rounded"
+                        >
+                          แก้ไข
+                        </button>
+                        <button
+                          onClick={() => handleDeleteHistoryItem(index)}
+                          className="bg-red-500 text-white px-2 py-1 rounded"
+                        >
+                          ลบ
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {editIndex !== null && (
+                  <div className="mt-4">
+                    <button
+                      onClick={handleSaveEdit}
+                      className="bg-green-500 text-white px-4 py-2 rounded"
+                    >
+                      บันทึก
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
+                    >
+                      ยกเลิก
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {showLineChart && (
+              <div className="w-full max-w-2xl mb-4"> {/* ปรับขนาดกราฟเส้น */}
+                <Line data={lineData} options={lineOptions} />
+              </div>
+            )}
+            {showSummary && (
+              <div className="w-full max-w-md mt-4">
+                <h2 className="text-lg font-semibold text-black mb-2">สรุปค่าใช้จ่าย</h2>
+                <div className="flex justify-between">
+                  <p className="text-black">รายรับทั้งหมด:</p>
+                  <p className="text-black">฿{summary.totalRevenue.toLocaleString()} ({summary.receivedPercentage}%)</p>
                 </div>
-              )}
-            </div>
-          )}
-          {showLineChart && (
-            <div className="w-full max-w-2xl mb-4"> {/* ปรับขนาดกราฟเส้น */}
-              <Line data={lineData} options={lineOptions} />
-            </div>
-          )}
-          {showSummary && (
-            <div className="w-full max-w-md mt-4">
-              <h2 className="text-lg font-semibold text-black mb-2">สรุปค่าใช้จ่าย</h2>
-              <div className="flex justify-between">
-                <p className="text-black">รายรับทั้งหมด:</p>
-                <p className="text-black">฿{summary.totalRevenue.toLocaleString()} ({summary.receivedPercentage}%)</p>
+                <div className="flex justify-between">
+                  <p className="text-black">รายจ่ายทั้งหมด:</p>
+                  <p className="text-black">฿{summary.totalExpenses.toLocaleString()} ({summary.usedPercentage}%)</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-black">ยอดเงินคงเหลือ:</p>
+                  <p className="text-black">฿{summary.remainingAmount.toLocaleString()} ({summary.remainingPercentage}%)</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-black">ใช้เงินมากที่สุดในวัน:</p>
+                  <p className="text-black">{summary.maxExpenseDay.date}</p>
+                  <p className="text-black">฿{summary.maxExpenseDay.amount.toLocaleString()}</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-black">ได้รับเงินมากที่สุดในวัน:</p>
+                  <p className="text-black">{summary.maxRevenueDay.date}</p>
+                  <p className="text-black">฿{summary.maxRevenueDay.amount.toLocaleString()}</p>
+                </div>
+                <div className="flex justify-between">
+                  <p className="text-black">ยอดเงินทั้งหมด:</p>
+                  <p className="text-black">฿{summary.totalMoney.toLocaleString()} (100%)</p>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <p className="text-black">รายจ่ายทั้งหมด:</p>
-                <p className="text-black">฿{summary.totalExpenses.toLocaleString()} ({summary.usedPercentage}%)</p>
-              </div>
-              <div className="flex justify-between">
-                <p className="text-black">ยอดเงินคงเหลือ:</p>
-                <p className="text-black">฿{summary.remainingAmount.toLocaleString()} ({summary.remainingPercentage}%)</p>
-              </div>
-              <div className="flex justify-between">
-                <p className="text-black">ใช้เงินมากที่สุดในวัน:</p>
-                <p className="text-black">{summary.maxExpenseDay.date}</p>
-                <p className="text-black">฿{summary.maxExpenseDay.amount.toLocaleString()}</p>
-              </div>
-              <div className="flex justify-between">
-                <p className="text-black">ได้รับเงินมากที่สุดในวัน:</p>
-                <p className="text-black">{summary.maxRevenueDay.date}</p>
-                <p className="text-black">฿{summary.maxRevenueDay.amount.toLocaleString()}</p>
-              </div>
-              <div className="flex justify-between">
-                <p className="text-black">ยอดเงินทั้งหมด:</p>
-                <p className="text-black">฿{summary.totalMoney.toLocaleString()} (100%)</p>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-      <button
-        onClick={handleReset}
-        className="absolute bottom-4 left-4 bg-gray-500 text-white px-4 py-2 rounded"
-      >
-        รีเซ็ต
-      </button>
+            )}
+          </>
+        )}
+        <button
+          onClick={handleReset}
+          className="absolute bottom-4 left-4 bg-gray-500 text-white px-4 py-2 rounded"
+        >
+          รีเซ็ต
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
 }
