@@ -8,17 +8,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faCaretLeft,
     faHouse,
-    faChartLine,
-    faClockRotateLeft,
     faBolt,
-    faBell,
     faGear,
     faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
 import { getAuth, signOut } from "firebase/auth";
 import { db } from "../../../lib/firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import BarChart from "../chart/Barchart";
 
 export default function Sidebar() {
     const router = useRouter();
@@ -28,12 +24,17 @@ export default function Sidebar() {
     useEffect(() => {
         const fetchUserData = async () => {
             const userEmail = sessionStorage.getItem("userEmail");
-            if (userEmail) {
+            const localUserData = localStorage.getItem("userData");
+
+            if (localUserData) {
+                setUser(JSON.parse(localUserData));
+            } else if (userEmail) {
                 const q = query(collection(db, "users"), where("email", "==", userEmail));
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
                     const userData = querySnapshot.docs[0].data();
                     setUser(userData);
+                    localStorage.setItem("userData", JSON.stringify(userData));
                 }
             }
         };
@@ -48,16 +49,14 @@ export default function Sidebar() {
         sessionStorage.removeItem("isLoggedIn");
         sessionStorage.removeItem("userEmail");
         sessionStorage.removeItem("uid");
+        localStorage.removeItem("userData");
         router.push("/login");
     };
 
-    
-
     const menuItems = [
         { name: "Home", path: "/homepage", icon: faHouse },
-        { name: "Dashboard", path: "/dashbord", icon: faChartLine },
-        { name: "History", path: "/history", icon: faClockRotateLeft },
         { name: "Analyze", path: "/analyze", icon: faBolt },
+        { name: "Settings", path: "/setting", icon: faGear }, // แก้ไขเส้นทางเป็น /setting
     ];
 
     return (
@@ -90,17 +89,9 @@ export default function Sidebar() {
             <div className="absolute bottom-0 w-full flex justify-center items-center flex-col mb-5 select-none">
                 <div className="border-t-2 w-[80%] h-1 mb-5"></div>
                 <div className="w-full flex justify-center items-center flex-col">
-                    <a href="home" className="text-[#7c7c7c] w-[80%] h-[40px] rounded flex items-center text-center text-[16px] duration-300 font-semibold pl-5 mb-2 hover:bg-[#efefef] hover:text-black">
-                        <FontAwesomeIcon icon={faBell} className="text-[20px] mr-3" />
-                        Notifications
-                    </a>
-                    <a href="home" className="text-[#7c7c7c] w-[80%] h-[40px] rounded flex items-center text-center text-[16px] duration-300 font-semibold pl-5 mb-2 hover:bg-[#efefef] hover:text-black">
-                        <FontAwesomeIcon icon={faGear} className="text-[20px] mr-3" />
-                        Settings
-                    </a>
                     <div className="group w-[80%] pl-2 mt-3 flex justify-start items-center h-[50px] rounded duration-300 hover:bg-[#efefef]">
                         <div className="rounded-full bg-[#0F7CF0] w-[40px] h-[40px] flex justify-center items-center overflow-hidden mr-2">
-                            <Image src="/image/sawako.jpeg" alt="Profile" width={40} height={300} />
+                            <Image src="/image/man1.jpg" alt="Profile" width={40} height={300} />
                         </div>
                         <div className="flex flex-col w-[55%] max-w-full overflow-hidden whitespace-nowrap text-ellipsis mr-2">
                             {user && (
