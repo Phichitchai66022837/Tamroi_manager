@@ -48,6 +48,8 @@ export default function HomepageContent() {
   const [history, setHistory] = useState([]); // ประวัติรายรับรายจ่าย
   const [selectedDate, setSelectedDate] = useState(""); // วันที่ที่เลือกสำหรับการบันทึก
   const [showSummary, setShowSummary] = useState(false); // สถานะเพื่อควบคุมการแสดงผลของสรุปค่าใช้จ่าย
+  const [editIndex, setEditIndex] = useState(null); // สถานะเพื่อเก็บ index ของรายการที่กำลังถูกแก้ไข
+  const [editItem, setEditItem] = useState(null); // สถานะเพื่อเก็บข้อมูลของรายการที่กำลังถูกแก้ไข
 
   useEffect(() => {
     const fetchData = async () => {
@@ -171,11 +173,43 @@ export default function HomepageContent() {
 
   const handleEditHistoryItem = (index) => {
     const item = history[index];
+    setEditIndex(index);
+    setEditItem(item);
     setInputRevenue(item.type === "รายรับ" ? item.amount.toString() : "");
     setInputExpenses(item.type === "รายจ่าย" ? item.amount.toString() : "");
     setExpenseCategory(item.category || "ทั่วไป");
     setSelectedDate(item.date);
-    handleDeleteHistoryItem(index);
+  };
+
+  const handleCancelEdit = () => {
+    setEditIndex(null);
+    setEditItem(null);
+    setInputRevenue("");
+    setInputExpenses("");
+    setExpenseCategory("ทั่วไป");
+    setSelectedDate("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (editIndex !== null && editItem) {
+      const newHistory = [...history];
+      const updatedItem = {
+        ...editItem,
+        amount: parseFloat(inputRevenue || inputExpenses.replace(/,/g, '')),
+        category: expenseCategory,
+        date: selectedDate,
+      };
+      newHistory[editIndex] = updatedItem;
+      setHistory(newHistory);
+
+      // ดึงข้อมูลอีเมลและ uid ผู้ใช้จาก session storage
+      const userEmail = sessionStorage.getItem("userEmail");
+      const uid = sessionStorage.getItem("uid");
+
+      await updateFinancialData(totalAmount, revenue, expenses, expenseCategories, newHistory, userEmail, uid);
+
+      handleCancelEdit();
+    }
   };
 
   const updateFinancialData = async (totalAmount, revenue, expenses, expenseCategories, history, userEmail, uid) => {
@@ -227,17 +261,25 @@ export default function HomepageContent() {
 
   // ข้อมูลสำหรับกราฟเส้น
   const lineData = {
-    labels: history.map(item => new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })),
+    labels: [...new Set(history.map(item => new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })))],
     datasets: [
       {
         label: 'รายรับ',
-        data: history.filter(item => item.type === 'รายรับ').map(item => item.amount),
+        data: history.filter(item => item.type === 'รายรับ').reduce((acc, item) => {
+          const date = new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+          acc[date] = (acc[date] || 0) + item.amount;
+          return acc;
+        }, {}),
         borderColor: 'green',
         fill: false,
       },
       {
         label: 'รายจ่าย',
-        data: history.filter(item => item.type === 'รายจ่าย').map(item => item.amount),
+        data: history.filter(item => item.type === 'รายจ่าย').reduce((acc, item) => {
+          const date = new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+          acc[date] = (acc[date] || 0) + item.amount;
+          return acc;
+        }, {}),
         borderColor: 'red',
         fill: false,
       },
@@ -257,7 +299,7 @@ export default function HomepageContent() {
     scales: {
       x: {
         type: 'category',
-        labels: history.map(item => new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })),
+        labels: [...new Set(history.map(item => new Date(item.date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })))],
       },
       y: {
         beginAtZero: true,
@@ -385,7 +427,7 @@ export default function HomepageContent() {
                   }}
                   className="bg-gray-500 text-white px-12 py-3 rounded"
                 >
-                  {showChart ? "ซ่อนกราฟ" : "แสดงกราฟ"}
+                  {showChart ? "ซ่อน" : "กราฟโดนัท"}
                 </button>
                 <button
                   onClick={() => {
@@ -396,7 +438,7 @@ export default function HomepageContent() {
                   }}
                   className="bg-gray-500 text-white px-12 py-3 rounded"
                 >
-                  {showHistory ? "ซ่อนประวัติ" : "แสดงประวัติ"}
+                  {showHistory ? "ซ่อน" : "ประวัติค่าใช้จ่าย"}
                 </button>
                 <button
                   onClick={() => {
@@ -408,7 +450,7 @@ export default function HomepageContent() {
                   className="bg-gray-500 text-white px-12 py-3 rounded"
                   style={{ display: (revenue > 0 || expenses > 0) ? 'block' : 'none' }}
                 >
-                  {showLineChart ? "ซ่อนกราฟเส้น" : "แสดงกราฟเส้น"}
+                  {showLineChart ? "ซ่อน" : "กราฟเส้น"}
                 </button>
                 <button
                   onClick={() => {
@@ -419,7 +461,7 @@ export default function HomepageContent() {
                   }}
                   className="bg-gray-500 text-white px-12 py-3 rounded"
                 >
-                  {showSummary ? "ซ่อนสรุป" : "แสดงสรุป"}
+                  {showSummary ? "ซ่อน" : "สรุปค่าใช้จ่าย"}
                 </button>
               </div>
             )}
@@ -433,23 +475,43 @@ export default function HomepageContent() {
                 <h2 className="text-lg font-semibold text-black mb-2">ประวัติค่าใช้จ่าย (แก้ไข)</h2>
                 <ul className="list-disc list-inside text-black">
                   {history.map((item, index) => (
-                    <li key={index}>
-                      {item.date} - {item.type} {item.category ? `(${item.category})` : ""}: ฿{item.amount.toLocaleString()}
-                      <button
-                        onClick={() => handleEditHistoryItem(index)}
-                        className="bg-yellow-500 text-white px-2 py-1 rounded ml-2"
-                      >
-                        แก้ไข
-                      </button>
-                      <button
-                        onClick={() => handleDeleteHistoryItem(index)}
-                        className="bg-red-500 text-white px-2 py-1 rounded ml-2"
-                      >
-                        ลบ
-                      </button>
+                    <li key={index} className="flex justify-between items-center">
+                      <span>
+                        {item.date} - {item.type} {item.category ? `(${item.category})` : ""}: ฿{item.amount.toLocaleString()}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditHistoryItem(index)}
+                          className="bg-yellow-500 text-white px-2 py-1 rounded"
+                        >
+                          แก้ไข
+                        </button>
+                        <button
+                          onClick={() => handleDeleteHistoryItem(index)}
+                          className="bg-red-500 text-white px-2 py-1 rounded"
+                        >
+                          ลบ
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
+                {editIndex !== null && (
+                  <div className="mt-4">
+                    <button
+                      onClick={handleSaveEdit}
+                      className="bg-green-500 text-white px-4 py-2 rounded"
+                    >
+                      บันทึก
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
+                    >
+                      ยกเลิก
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             {showLineChart && (
